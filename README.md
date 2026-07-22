@@ -22,12 +22,14 @@ It lets you instantly withdraw all items from your current retainer straight int
 
 | Command | Description |
 |----------|-------------|
+| `/masswithdraw` | Opens the window (only if a retainer bag or the retainer list is open) |
 | `/masswithdraw config` | Open the config window. |
-| `/masswithdraw transfer` | Immediately starts a transfer if possible (prints a message if not). |
-| `/masswithdraw filter` | Manage item type filters. |
+| `/masswithdraw transfer` | Starts the transfer for the currently-open retainer. |
+| `/masswithdraw filter list` | Prints every filter name and its on/off state. |
+| `/masswithdraw filter <name> <on/off/toggle` |  Sets/toggles one filter |
 | `/masswithdraw withdrawall` | Start the batch "Withdraw All Retainers" operation. |
 | `/masswithdraw cancelall` | Cancel any running batch operation. |
-
+Filter names: whitegear, raregear, materia, consumables, craftingmats, submersibleparts.
 ---
 
 ## 🔌 IPC Integration
