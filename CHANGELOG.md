@@ -1,5 +1,6 @@
 ## 🧾 Changelog
 
+- **1.0.4.1** — Reformatted the `/masswithdraw` command help text (shown in the plugin installer) to list each subcommand on its own line.
 - **1.0.4.0** — Added `/masswithdraw filter`/`withdrawall`/`cancelall` chat commands and matching IPC calls (`MassWithdraw.SetFilter`, `GetFilter`, `ToggleFilter`, `ClearFilters`, `GetFilterNames`, `StartWithdrawAll`, `CancelWithdrawAll`, `IsWithdrawAllRunning`) so other plugins/scripts can drive filters and the withdraw-all batch.
 - **1.0.3.0** — Added a "Withdraw All Retainers" button, shown at the retainer list, that walks every retainer in turn and runs the usual withdraw process for each.
 - **1.0.2.2** — Removed obsolete WindowSizeConstraints usage for API 15 runtime compatibility.
