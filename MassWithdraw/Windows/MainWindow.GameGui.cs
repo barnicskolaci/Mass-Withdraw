@@ -26,6 +26,15 @@ public partial class MainWindow
     }
 
     /**
+     * * Checks whether the retainer list window (shown after talking to a summoning bell) is open.
+     * <return type="bool">True if the retainer list is open; otherwise, false</return>
+     */
+    internal unsafe bool IsRetainerListOpen()
+    {
+        return TryGetAddon("RetainerList", out _);
+    }
+
+    /**
      * * Attempts to locate the active retainer inventory addon and retrieve its position and size.
      * <param name="topLeft">Outputs the top-left screen coordinates of the retainer UI</param>
      * <param name="size">Outputs the pixel dimensions of the retainer UI</param>

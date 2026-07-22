@@ -41,12 +41,6 @@ public partial class MainWindow : Window, IDisposable
 
         RespectCloseHotkey = false;
 
-        SizeConstraints = new()
-        {
-            MinimumSize = new(280f, 0f),
-            MaximumSize = new(float.MaxValue, float.MaxValue),
-        };
-
         if (!frameworkHooked)
         {
             Plugin.Framework.Update += OnFrameworkUpdate;
@@ -76,9 +70,17 @@ public partial class MainWindow : Window, IDisposable
     {
         if (configuration.AnchorWindow)
             AnchorToRetainer();
-        
-        if (!IsRetainerUIOpen())
-        { 
+
+        bool retainerBagOpen = IsRetainerUIOpen();
+        bool retainerListOpen = IsRetainerListOpen();
+
+        // A batch run passes through addons this check doesn't know about (e.g. the
+        // SelectString menu between picking a retainer and its bag opening), during
+        // which neither retainerBagOpen nor retainerListOpen is briefly true. Don't
+        // treat that as "nothing retainer-related is happening" while a batch is in
+        // flight — AdvanceBatch's own per-phase timeout is what should end it instead.
+        if (!retainerBagOpen && !retainerListOpen && !IsBatchRunning)
+        {
             if (transferSession.Running)
                 cancellationTokenSource?.Cancel();
 
@@ -86,24 +88,94 @@ public partial class MainWindow : Window, IDisposable
             return;
         }
 
-        bool isRunning = transferSession.Running;
-
-        TransferPreview preview = default;
-        if (!isRunning)
-            preview = GenerateTransferPreview();
-
         float contentWidth = ImGui.GetContentRegionAvail().X;
 
-        if (isRunning)
-            DrawRunningState(contentWidth);
+        if (retainerBagOpen)
+        {
+            bool isRunning = transferSession.Running;
+
+            TransferPreview preview = default;
+            if (!isRunning)
+                preview = GenerateTransferPreview();
+
+            if (isRunning)
+                DrawRunningState(contentWidth);
+            else
+                DrawIdleState(
+                    preview.itemsToMove,
+                    preview.transferStacks,
+                    preview.totalStacks,
+                    preview.inventoryFreeSlots,
+                    contentWidth
+                );
+
+            if (IsBatchRunning)
+                DrawBatchStatusLine(contentWidth);
+
+            return;
+        }
+
+        // Retainer list is open, but no specific retainer's bag is.
+        if (IsBatchRunning)
+            DrawBatchIdlePanel(contentWidth);
         else
-            DrawIdleState(
-                preview.itemsToMove,
-                preview.transferStacks,
-                preview.totalStacks,
-                preview.inventoryFreeSlots,
-                contentWidth
-            );
+            DrawRetainerListPanel(contentWidth);
+    }
+
+    /**
+     * * Renders the "withdraw from every retainer" entry point shown while the retainer list is open.
+     * <param name="contentWidth">Horizontal space for layout</param>
+     */
+    private void DrawRetainerListPanel(float contentWidth)
+    {
+        CenteredText("Withdraw items from every retainer in one go.");
+        ImGui.Spacing();
+
+        float buttonWidth = MathF.Min(220f, contentWidth);
+        ImGui.SetCursorPosX(MathF.Max(8f, (contentWidth - buttonWidth) * 0.5f));
+        if (ImGui.Button("Withdraw All Retainers", new Vector2(buttonWidth, 0)))
+            StartWithdrawAllRetainers();
+
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        if (DrawFilterHeaderButton(contentWidth))
+            isFilterPanelVisible = !isFilterPanelVisible;
+
+        if (isFilterPanelVisible)
+            DrawFiltersPanel();
+    }
+
+    /**
+     * * Renders batch progress shown between retainers, while the retainer list is open but no bag is.
+     * <param name="contentWidth">Horizontal space for layout</param>
+     */
+    private void DrawBatchIdlePanel(float contentWidth)
+    {
+        CenteredText($"Withdrawing from retainer {batchRetainerIndex + 1} of {batchRetainerCount}…");
+        ImGui.Spacing();
+
+        float buttonWidth = MathF.Min(160f, contentWidth);
+        ImGui.SetCursorPosX(MathF.Max(8f, (contentWidth - buttonWidth) * 0.5f));
+        if (ImGui.Button("Cancel All", new Vector2(buttonWidth, 0)))
+            CancelBatch();
+    }
+
+    /**
+     * * Renders a batch-progress footer under the normal single-retainer UI while a batch drives it.
+     * <param name="contentWidth">Horizontal space for layout</param>
+     */
+    private void DrawBatchStatusLine(float contentWidth)
+    {
+        ImGui.Spacing();
+        ImGui.Separator();
+        CenteredText($"Batch: retainer {batchRetainerIndex + 1} of {batchRetainerCount}");
+
+        float buttonWidth = MathF.Min(160f, contentWidth);
+        ImGui.SetCursorPosX(MathF.Max(8f, (contentWidth - buttonWidth) * 0.5f));
+        if (ImGui.Button("Cancel All##Footer", new Vector2(buttonWidth, 0)))
+            CancelBatch();
     }
 
     /**

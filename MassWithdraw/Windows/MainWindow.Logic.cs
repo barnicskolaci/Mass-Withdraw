@@ -31,6 +31,17 @@ public partial class MainWindow
         [CraftingMaterialsId] = IsCraftingMaterial,
         [SubmersiblePartsId]  = IsSubmersiblePart,
     };
+    // Canonical names for chat-command/IPC filter access — kept separate from the UI's
+    // display labels so callers get stable, script-friendly identifiers.
+    private static readonly Dictionary<string, uint> categoryIdsByName = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["whitegear"]        = WhiteGearId,
+        ["raregear"]         = RareGearId,
+        ["materia"]          = MateriaId,
+        ["consumables"]      = ConsumablesId,
+        ["craftingmats"]     = CraftingMaterialsId,
+        ["submersibleparts"] = SubmersiblePartsId,
+    };
     private static readonly HashSet<uint> materiaCategoryIds   = [57];
     private static readonly HashSet<uint> materialsCategoryIds = [44, 47, 48, 49, 50, 51, 52, 53, 54, 55, 58, 59];
     private static readonly HashSet<uint> submersiblePartsCategoryIds = [79];
@@ -100,6 +111,37 @@ public partial class MainWindow
             itemSheetCache = Plugin.DataManager.GetExcelSheet<ItemRow>();
 
         return itemSheetCache?.GetRow(itemId);
+    }
+
+    /**
+     * * Resolves the specific Armoury Chest container a piece of gear belongs in
+     * <param name="item">The item row to evaluate</param>
+     * <return type="GameStructs.InventoryType?">The matching armoury container, or null if the item isn't equippable gear</return>
+     */
+    private static GameStructs.InventoryType? GetArmoryContainerFor(ItemRow item)
+    {
+        if (item.EquipSlotCategory.RowId == 0)
+            return null;
+
+        var slot = item.EquipSlotCategory.ValueNullable;
+        if (slot == null)
+            return null;
+
+        var s = slot.Value;
+        if (s.MainHand != 0) return GameStructs.InventoryType.ArmoryMainHand;
+        if (s.OffHand != 0) return GameStructs.InventoryType.ArmoryOffHand;
+        if (s.Head != 0) return GameStructs.InventoryType.ArmoryHead;
+        if (s.Body != 0) return GameStructs.InventoryType.ArmoryBody;
+        if (s.Gloves != 0) return GameStructs.InventoryType.ArmoryHands;
+        if (s.Legs != 0) return GameStructs.InventoryType.ArmoryLegs;
+        if (s.Feet != 0) return GameStructs.InventoryType.ArmoryFeets;
+        if (s.Ears != 0) return GameStructs.InventoryType.ArmoryEar;
+        if (s.Neck != 0) return GameStructs.InventoryType.ArmoryNeck;
+        if (s.Wrists != 0) return GameStructs.InventoryType.ArmoryWrist;
+        if (s.FingerL != 0 || s.FingerR != 0) return GameStructs.InventoryType.ArmoryRings;
+        if (s.SoulCrystal != 0) return GameStructs.InventoryType.ArmorySoulCrystal;
+
+        return null;
     }
 
     /**
@@ -279,6 +321,72 @@ public partial class MainWindow
 
         return false;
     }
+
+    /**
+     * * Canonical, script-friendly names for the category filters (see Windows/Plugin.IPC.cs and Plugin.cs's chat command)
+     */
+    public IEnumerable<string> FilterNames => categoryIdsByName.Keys;
+
+    /**
+     * * Reads whether a named category filter is currently enabled
+     * <param name="name">A canonical filter name from <see cref="FilterNames"/></param>
+     * <param name="enabled">Outputs whether the filter is enabled, if recognized</param>
+     * <return type="bool">True if the name was recognized; otherwise, false</return>
+     */
+    public bool TryGetFilterEnabled(string name, out bool enabled)
+    {
+        enabled = false;
+        if (!categoryIdsByName.TryGetValue(name, out var id))
+            return false;
+
+        enabled = selectedCategoryIds.Contains(id);
+        return true;
+    }
+
+    /**
+     * * Enables or disables a named category filter
+     * <param name="name">A canonical filter name from <see cref="FilterNames"/></param>
+     * <param name="enabled">The desired enabled state</param>
+     * <return type="bool">True if the name was recognized and applied; otherwise, false</return>
+     */
+    public bool TrySetFilterEnabled(string name, bool enabled)
+    {
+        if (!categoryIdsByName.TryGetValue(name, out var id))
+            return false;
+
+        if (enabled)
+            selectedCategoryIds.Add(id);
+        else
+            selectedCategoryIds.Remove(id);
+
+        return true;
+    }
+
+    /**
+     * * Flips a named category filter's enabled state
+     * <param name="name">A canonical filter name from <see cref="FilterNames"/></param>
+     * <param name="newState">Outputs the filter's state after toggling, if recognized</param>
+     * <return type="bool">True if the name was recognized and toggled; otherwise, false</return>
+     */
+    public bool TryToggleFilter(string name, out bool newState)
+    {
+        newState = false;
+        if (!categoryIdsByName.TryGetValue(name, out var id))
+            return false;
+
+        newState = !selectedCategoryIds.Contains(id);
+        if (newState)
+            selectedCategoryIds.Add(id);
+        else
+            selectedCategoryIds.Remove(id);
+
+        return true;
+    }
+
+    /**
+     * * Clears all category filters, matching the config panel’s "Clear" button
+     */
+    public void ClearFilters() => selectedCategoryIds.Clear();
 #endregion
 
 #region Inventory Analysis
@@ -368,7 +476,11 @@ public partial class MainWindow
 
                 if (row.Value.IsUnique)
                 {
-                    if (items.Contains(slot->ItemId))
+                    var armoryType = GetArmoryContainerFor(row.Value);
+                    bool alreadyOwned = items.Contains(slot->ItemId)
+                        || (armoryType.HasValue && ContainerHasItem(inv, armoryType.Value, slot->ItemId));
+
+                    if (alreadyOwned)
                         continue;
                     if (!seenUniqueFromRetainer.Add(slot->ItemId))
                         continue;
@@ -424,11 +536,91 @@ public partial class MainWindow
     }
 
     /**
-     * * Checks if a specific item exists in the player’s inventory
-     * <param name="itemId">The unique ID of the item to check for</param>
-     * <return type="bool">True if the item is present in the player’s inventory; otherwise, false</return>
+     * * Counts how many retainer stacks can be routed into the Armoury Chest instead of a regular bag
+     *   (gear only, capped by each specific armoury sub-container's free slot count)
+     * <param name="moveStacks">Dictionary of item IDs mapped to their retainer stack quantities</param>
+     * <param name="inv">Pointer to the InventoryManager instance</param>
+     * <return type="int">The total number of stacks that can be placed directly into the Armoury Chest</return>
      */
-    private static unsafe bool HasItemInInventory(uint itemId)
+    private static unsafe int CountArmoryPlaceableStacks(Dictionary<uint, List<int>> moveStacks, GameStructs.InventoryManager* inv)
+    {
+        var armorySpace = new Dictionary<GameStructs.InventoryType, int>();
+        int placeable = 0;
+
+        foreach (var (itemId, stacks) in moveStacks)
+        {
+            var row = GetItemRowById(itemId);
+            var armoryType = row.HasValue ? GetArmoryContainerFor(row.Value) : null;
+            if (armoryType == null)
+                continue;
+
+            if (!armorySpace.TryGetValue(armoryType.Value, out var free))
+            {
+                free = CountFreeSlotsInContainer(inv, armoryType.Value);
+                armorySpace[armoryType.Value] = free;
+            }
+
+            int placed = Math.Min(stacks.Count, free);
+            placeable += placed;
+            armorySpace[armoryType.Value] = free - placed;
+        }
+
+        return placeable;
+    }
+
+    /**
+     * * Counts the free slots in a single inventory container
+     * <param name="inv">Pointer to the InventoryManager instance</param>
+     * <param name="type">The container to scan</param>
+     * <return type="int">The number of empty slots in that container</return>
+     */
+    private static unsafe int CountFreeSlotsInContainer(GameStructs.InventoryManager* inv, GameStructs.InventoryType type)
+    {
+        var container = inv->GetInventoryContainer(type);
+        if (container == null)
+            return 0;
+
+        int free = 0;
+        for (int s = 0; s < container->Size; s++)
+        {
+            var slot = container->GetInventorySlot(s);
+            if (slot == null || slot->ItemId == 0)
+                free++;
+        }
+
+        return free;
+    }
+
+    /**
+     * * Checks whether a specific item is present in a single inventory container
+     * <param name="inv">Pointer to the InventoryManager instance</param>
+     * <param name="type">The container to scan</param>
+     * <param name="itemId">The unique ID of the item to check for</param>
+     * <return type="bool">True if the item is present with quantity greater than zero; otherwise, false</return>
+     */
+    private static unsafe bool ContainerHasItem(GameStructs.InventoryManager* inv, GameStructs.InventoryType type, uint itemId)
+    {
+        var container = inv->GetInventoryContainer(type);
+        if (container == null)
+            return false;
+
+        for (int slot = 0; slot < container->Size; slot++)
+        {
+            var currentSlot = container->GetInventorySlot(slot);
+            if (currentSlot != null && currentSlot->ItemId == itemId && currentSlot->Quantity > 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * * Checks if a specific item exists in the player’s inventory or, for gear, its matching Armoury Chest slot
+     * <param name="itemId">The unique ID of the item to check for</param>
+     * <param name="armoryType">The item's matching armoury container, if it's gear</param>
+     * <return type="bool">True if the item is present in the player’s inventory or armoury; otherwise, false</return>
+     */
+    private static unsafe bool HasItemInInventory(uint itemId, GameStructs.InventoryType? armoryType)
     {
         if (itemId == 0)
             return false;
@@ -439,29 +631,53 @@ public partial class MainWindow
 
         foreach (var page in PlayerInventoryPages)
         {
-            var container = inv->GetInventoryContainer(page);
-            if (container == null)
-                continue;
+            if (ContainerHasItem(inv, page, itemId))
+                return true;
+        }
 
-            for (int slot = 0; slot < container->Size; slot++)
+        return armoryType.HasValue && ContainerHasItem(inv, armoryType.Value, itemId);
+    }
+#endregion
+
+#region Slot Selection
+    /**
+     * * Searches the item's matching Armoury Chest container for a free slot
+     * <param name="item">The item row being placed; only equippable gear maps to an armoury container</param>
+     * <param name="targetContainer">Outputs the armoury container where a free slot was found</param>
+     * <param name="targetSlot">Outputs the index of the available armoury slot</param>
+     * <return type="bool">True if the item is gear and a free armoury slot was found; otherwise, false</return>
+     */
+    private unsafe bool TryFindArmorySlot(ItemRow item, out GameStructs.InventoryType targetContainer, out int targetSlot)
+    {
+        targetContainer = default;
+        targetSlot = -1;
+
+        var armoryType = GetArmoryContainerFor(item);
+        if (armoryType == null)
+            return false;
+
+        var inv = GameStructs.InventoryManager.Instance();
+        if (inv == null)
+            return false;
+
+        var container = inv->GetInventoryContainer(armoryType.Value);
+        if (container == null)
+            return false;
+
+        for (int slot = 0; slot < container->Size; slot++)
+        {
+            var s = container->GetInventorySlot(slot);
+            if (s == null || s->ItemId == 0)
             {
-                var currentSlot = container->GetInventorySlot(slot);
-                if (currentSlot == null)
-                    continue;
-
-                bool isSameItem = currentSlot->ItemId == itemId;
-                bool hasQuantity = currentSlot->Quantity > 0;
-
-                if (isSameItem && hasQuantity)
-                    return true;
+                targetContainer = armoryType.Value;
+                targetSlot = slot;
+                return true;
             }
         }
 
         return false;
     }
-#endregion
 
-#region Slot Selection
     /**
      * * Searches the player’s inventory for an existing partial stack of the specified item
      * <param name="itemId">The ID of the item to find a stackable slot for</param>
@@ -592,9 +808,10 @@ public partial class MainWindow
         CountRetainerStacks(inv, inventoryItems, moveStacks, ref totalStacks, ref transferStacks);
 
         int mergeable = CountMergeableStacks(moveStacks, stackSpace);
+        int armoryPlaceable = CountArmoryPlaceableStacks(moveStacks, inv);
 
-        int unmergedStacks = Math.Max(0, transferStacks - mergeable);
-        int itemsToMove = mergeable + Math.Min(unmergedStacks, inventoryFreeSlots);
+        int unmergedStacks = Math.Max(0, transferStacks - mergeable - armoryPlaceable);
+        int itemsToMove = mergeable + armoryPlaceable + Math.Min(unmergedStacks, inventoryFreeSlots);
 
         return new TransferPreview(totalStacks, transferStacks, inventoryFreeSlots, itemsToMove);
     }
@@ -631,6 +848,8 @@ public partial class MainWindow
 
     private void OnFrameworkUpdate(IFramework _)
     {
+        AdvanceBatch();
+
         if (!transferSession.Running)
             return;
 
@@ -738,18 +957,21 @@ public partial class MainWindow
                 if (row == null || !MatchesTransferFilters(row.Value))
                     continue;
 
+                var armoryType = GetArmoryContainerFor(row.Value);
+
                 if (row.Value.IsUnique)
                 {
                     if (!seenUniqueDuringRun.Add(itemId))
                         continue;
-                    if (HasItemInInventory(itemId))
+                    if (HasItemInInventory(itemId, armoryType))
                         continue;
                 }
 
                 GameStructs.InventoryType targetContainer;
                 int targetSlot;
 
-                if (!FindStackableSlot(itemId, out targetContainer, out targetSlot) &&
+                if (!TryFindArmorySlot(row.Value, out targetContainer, out targetSlot) &&
+                    !FindStackableSlot(itemId, out targetContainer, out targetSlot) &&
                     !FindFreeBagSlot(out targetContainer, out targetSlot))
                 {
                     StopTransfer($"[MassWithdraw] Stopped: no free bag space. Moved {transferSession.Moved} item(s).");

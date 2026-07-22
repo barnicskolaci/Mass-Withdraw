@@ -10,5 +10,5 @@
     "withdraw"
   ],
   "IconUrl": "https://kanww.github.io/Mass-Withdraw/releases/icon128.png",
-  "Changelog": "- 1.0.1.9 — Fixed performance issues and low FPS during mass withdraw operations."
+  "Changelog": "- 1.0.4.0 - Added chat commands and IPC to control filters and the withdraw-all-retainers batch."
 }
