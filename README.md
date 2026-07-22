@@ -10,9 +10,11 @@ It lets you instantly withdraw all items from your current retainer straight int
 - **Smart Preview** — shows how many items will move, how much bag space you have, and an ETA.
 - **Automatic Transfers** — safely moves all eligible items in sequence.
 - **Unique-Item Protection** — skips items you already own.
-- **Filter System** — choose which item types to withdraw.
+- **Filter System** — choose which item types to withdraw, with quick toggles in the retainer list.
+- **Withdraw All Retainers** — batch process all retainers at once, with gear automatically routed to the Armoury Chest when there's room.
 - **Auto-Anchor Window** — the plugin window stays neatly aligned next to the Retainer Inventory.
 - **Fast & Lightweight** — no lag, no setup, just open and withdraw.
+- **Plugin Integration** — expose filters and batch operations via IPC for external scripts and plugins.
 
 ---
 
@@ -22,6 +24,18 @@ It lets you instantly withdraw all items from your current retainer straight int
 |----------|-------------|
 | `/masswithdraw config` | Open the config window. |
 | `/masswithdraw transfer` | Immediately starts a transfer if possible (prints a message if not). |
+| `/masswithdraw filter` | Manage item type filters. |
+| `/masswithdraw withdrawall` | Start the batch "Withdraw All Retainers" operation. |
+| `/masswithdraw cancelall` | Cancel any running batch operation. |
+
+---
+
+## 🔌 IPC Integration
+
+Other plugins can control **Mass Withdraw** via IPC channels:
+
+- **Filter Management**: `MassWithdraw.SetFilter`, `GetFilter`, `ToggleFilter`, `ClearFilters`, `GetFilterNames`
+- **Batch Operations**: `MassWithdraw.StartWithdrawAll`, `CancelWithdrawAll`, `IsWithdrawAllRunning`
 
 ---
 
