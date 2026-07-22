@@ -45,13 +45,14 @@ public sealed partial class Plugin : IDalamudPlugin
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage =
-                "Open the Mass Withdraw window to transfer all items from your retainer to your inventory.\n" +
-                "/masswithdraw transfer — trigger the transfer if possible\n" +
-                "/masswithdraw config — open the configuration window\n" +
-                "/masswithdraw withdrawall — withdraw from every retainer in turn\n" +
-                "/masswithdraw cancelall — cancel an in-progress withdraw-all\n" +
-                "/masswithdraw filter list|clear|<name> <on|off|toggle> — manage category filters"
+            HelpMessage = "Opens the Mass Withdraw window.\n" +
+            "/masswithdraw transfer → Triggers the transfer for the open retainer.\n" +
+            "/masswithdraw config → Opens the configuration window.\n" +
+            "/masswithdraw withdrawall → Withdraws from every retainer in turn.\n" +
+            "/masswithdraw cancelall → Cancels an in-progress withdraw-all.\n" +
+            "/masswithdraw filter list → Lists filter names and their state.\n" +
+            "/masswithdraw filter clear → Clears all filters.\n" +
+            "/masswithdraw filter <name> on|off|toggle → Sets or toggles one filter.",
         });
 
         PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
