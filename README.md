@@ -29,7 +29,7 @@ It lets you instantly withdraw all items from your current retainer straight int
 | `/masswithdraw filter <name> <on/off/toggle` |  Sets/toggles one filter |
 | `/masswithdraw withdrawall` | Start the batch "Withdraw All Retainers" operation. |
 | `/masswithdraw cancelall` | Cancel any running batch operation. |
-| Filter names | whitegear, raregear, materia, consumables, craftingmats, submersibleparts |
+| Filter names : whitegear, raregear, materia, consumables, craftingmats, submersibleparts |
 ---
 
 ## 🔌 IPC Integration
