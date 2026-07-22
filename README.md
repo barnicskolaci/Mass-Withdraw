@@ -32,10 +32,18 @@ It lets you instantly withdraw all items from your current retainer straight int
 
 ## 🔌 IPC Integration
 
-Other plugins can control **Mass Withdraw** via IPC channels:
+Other plugins can control **Mass Withdraw** via IPC channels (prefix: `MassWithdraw.`):
 
-- **Filter Management**: `MassWithdraw.SetFilter`, `GetFilter`, `ToggleFilter`, `ClearFilters`, `GetFilterNames`
-- **Batch Operations**: `MassWithdraw.StartWithdrawAll`, `CancelWithdrawAll`, `IsWithdrawAllRunning`
+| Channel | Signature | Effect |
+|---------|-----------|--------|
+| `SetFilter` | `(string name, bool enabled) → bool` | Sets a filter; `false` return = unrecognized name |
+| `GetFilter` | `(string name) → bool` | Reads a filter's state |
+| `ToggleFilter` | `(string name) → bool` | Flips a filter, returns the new state |
+| `ClearFilters` | `() → void` | Clears all filters |
+| `GetFilterNames` | `() → string[]` | The 6 canonical filter names |
+| `StartWithdrawAll` | `() → bool` | Starts the batch; `false` if already running / no retainers |
+| `CancelWithdrawAll` | `() → bool` | Cancels the batch; `false` if nothing was running |
+| `IsWithdrawAllRunning` | `() → bool` | Whether the batch is currently active |
 
 ---
 
