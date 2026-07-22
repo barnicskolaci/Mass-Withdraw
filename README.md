@@ -54,7 +54,7 @@ Other plugins can control **Mass Withdraw** via IPC channels (prefix: `MassWithd
 ## 🪙 Installation
 
 1. In-game, open `/xlsettings` → Developer → Custom Plugin Repositories
-2. Add the following URL: https://barnicskolaci.github.io/Mass-Withdraw/repo.json
+2. Add the following URL: https://raw.githubusercontent.com/barnicskolaci/Mass-Withdraw/master/repo.json
 3. Click Save, then open `/xlplugins`.
 4. Search **Mass Withdraw** and install.
 
