@@ -70,4 +70,4 @@ See the [LICENSE.md](LICENSE.md) file for full text.
 
 - Dalamud API — [goatcorp/Dalamud](https://github.com/goatcorp/Dalamud)  
 - FFXIVClientStructs — [aers/FFXIVClientStructs](https://github.com/aers/FFXIVClientStructs)
-- Original by Kanww — [Kanww/Mass-Withdraw](https://github.com/Kanww/Mass-Withdraw)
+- Original by Kanwa — [Kanww/Mass-Withdraw](https://github.com/Kanww/Mass-Withdraw)
