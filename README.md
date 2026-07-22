@@ -1,7 +1,8 @@
 # MassWithdraw
+forked from Kanww's Mass-Withdraw
 
 **Mass Withdraw** is a lightweight, fast retainer inventory tool for Final Fantasy XIV.
-It lets you instantly withdraw all items from your current retainer straight into your bags.
+It lets you instantly withdraw all items from your retainer(s) straight into your bags/armory.
 
 ---
 
@@ -30,7 +31,7 @@ It lets you instantly withdraw all items from your current retainer straight int
 | `/masswithdraw withdrawall` | Start the batch "Withdraw All Retainers" operation. |
 | `/masswithdraw cancelall` | Cancel any running batch operation. |
 
-### Filter names : whitegear, raregear, materia, consumables, craftingmats, submersibleparts
+- Filter names : whitegear, raregear, materia, consumables, craftingmats, submersibleparts
 ---
 
 ## 🔌 IPC Integration
@@ -53,7 +54,7 @@ Other plugins can control **Mass Withdraw** via IPC channels (prefix: `MassWithd
 ## 🪙 Installation
 
 1. In-game, open `/xlsettings` → Developer → Custom Plugin Repositories
-2. Add the following URL: https://kanww.github.io/Mass-Withdraw/repo.json
+2. Add the following URL: https://barnicskolaci.github.io/Mass-Withdraw/repo.json
 3. Click Save, then open `/xlplugins`.
 4. Search **Mass Withdraw** and install.
 
@@ -68,4 +69,5 @@ See the [LICENSE.md](LICENSE.md) file for full text.
 ## ❤️ Credits
 
 - Dalamud API — [goatcorp/Dalamud](https://github.com/goatcorp/Dalamud)  
-- FFXIVClientStructs — [aers/FFXIVClientStructs](https://github.com/aers/FFXIVClientStructs)  
+- FFXIVClientStructs — [aers/FFXIVClientStructs](https://github.com/aers/FFXIVClientStructs)
+- Original by Kanww — [Kanww/Mass-Withdraw](https://github.com/Kanww/Mass-Withdraw)
