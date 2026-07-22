@@ -5,17 +5,17 @@
     "InternalName": "MassWithdraw",
     "Description": "Withdraw all items from your retainer into your inventory.",
     "ApplicableVersion": "any",
-    "RepoUrl": "https://kanww.github.io/Mass-Withdraw/",
+    "RepoUrl": "https://github.com/barnicskolaci/Mass-Withdraw",
     "Tags": ["retainer", "inventory", "withdraw"],
-    "DalamudApiLevel": 14,
-    "DownloadLinkInstall": "https://kanww.github.io/Mass-Withdraw/releases/1.0.1.9.zip",
-    "DownloadLinkTesting": "https://kanww.github.io/Mass-Withdraw/releases/1.0.1.9.zip",
-    "DownloadLinkUpdate": "https://kanww.github.io/Mass-Withdraw/releases/1.0.1.9.zip",
+    "DalamudApiLevel": 15,
+    "DownloadLinkInstall": "https://github.com/barnicskolaci/Mass-Withdraw/releases/download/v1.0.4.0/1.0.4.0.zip",
+    "DownloadLinkTesting": "https://github.com/barnicskolaci/Mass-Withdraw/releases/download/v1.0.4.0/1.0.4.0.zip",
+    "DownloadLinkUpdate": "https://github.com/barnicskolaci/Mass-Withdraw/releases/download/v1.0.4.0/1.0.4.0.zip",
     "LoadPriority": 0,
     "Punchline": "Fast and safe retainer inventory withdraw.",
-    "AssemblyVersion": "1.0.1.9",
-    "Changelog": "- 1.0.1.9 — Fixed performance issues and low FPS during mass withdraw operations.",
-    "IconUrl": "https://kanww.github.io/Mass-Withdraw/releases/icon128.png",
-    "LastUpdate": 1766561400
+    "AssemblyVersion": "1.0.4.0",
+    "Changelog": "- 1.0.4.0 — Added /masswithdraw filter/withdrawall/cancelall chat commands and matching IPC calls (SetFilter, GetFilter, ToggleFilter, ClearFilters, GetFilterNames, StartWithdrawAll, CancelWithdrawAll, IsWithdrawAllRunning).\n- 1.0.3.0 — Added a \"Withdraw All Retainers\" button, shown at the retainer list, that walks every retainer in turn and runs the usual withdraw process for each (including routing gear into the Armoury Chest when there's room).\n- 1.0.2.2 — Removed obsolete WindowSizeConstraints usage for API 15 runtime compatibility.",
+    "IconUrl": "https://raw.githubusercontent.com/barnicskolaci/Mass-Withdraw/master/releases/icon128.png",
+    "LastUpdate": 1784740872
   }
 ]
